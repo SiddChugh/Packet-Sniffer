@@ -49,8 +49,8 @@ TCP_DATAGRAM     = 0x06
 UDP_DATAGRAM     = 0x11
 
 
-# Helper function to print the counts of each packet transmitted between two 
-# unique sources
+# Helper function to print the counts of each packet transmitted between 
+# the two unique sources
 def printSessionInformation():
   if (len (track_packets_bw_sources) > 0):
     print ("Summary of the number of packets exchanged between two unique " \
@@ -65,18 +65,21 @@ def printSessionInformation():
 
     print ("\n")
     print ("Total Number of packets captured in the session as of " + \
-          time.ctime() + " are " + str(NUM_PACKETS) + "\n")
+          time.ctime() + " are " + str (NUM_PACKETS) + "\n")
   else:
     print ("No packets were captured in the session as of " + time.ctime() \
           + "\n")
 
 # Print number of packets exchanged between two unique source
 # after every 10 seconds
-def printSessionInformationPeriodically():  
+def printSessionInformationPeriodically(): 
+  period = 10 
+  
   while True:
     printSessionInformation()
+
     # Pause the thread for 10 seconds
-    time.sleep (10)
+    time.sleep (period)
 
 # Start Sniffing Packets
 def main():
@@ -95,8 +98,8 @@ def main():
   conn = socket.socket (socket.PF_PACKET, socket.SOCK_RAW, \
                         socket.ntohs (0x0003))
   
-  # Print number of packets exchanged between two unique source
-  # after every 10 seconds
+  # Spawn a background thread thart would print number of packets exchanged
+  # between two unique sources after every 10 seconds
   periodic_task = threading.Thread (target = \
                                     printSessionInformationPeriodically)
   # Make sure that thread ends when the main thread is closed
@@ -182,7 +185,7 @@ def main():
         print ("---------------Packet Information Start-----------------------")
         print ("IP Source Address: " + IP_source_address)
         print ("IP Destination Address: " + IP_dest_address)
-        print ("IP Protocol used: " + str(transport_layer_protocol))
+        print ("IP Protocol used: " + str (transport_layer_protocol))
         
         segment = packet[IP_address_end_index:]
 
@@ -199,8 +202,8 @@ def main():
           # destination port numbers.
           src_port, dest_port = struct.unpack ('! H H', \
                                 segment[:struct.calcsize ('! H H')] )
-          print ("Source port " + str(src_port))
-          print ("Destination port " + str(dest_port))
+          print ("Source port " + str (src_port))
+          print ("Destination port " + str (dest_port))
           print ("Captured at " + time.ctime())
         
         # Increment number of packets exchanged in the session.     
@@ -213,7 +216,7 @@ def main():
     print ("--------------End of Session Statistics-------------------------\n")
     
     print ("Total Number of packets captured in the session " + \
-    str(NUM_PACKETS) + "\n")
+    str (NUM_PACKETS) + "\n")
 
     printSessionInformation()
     
