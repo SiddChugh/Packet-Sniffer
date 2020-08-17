@@ -7,6 +7,17 @@ Additionally, after every 10 seconds, the counts of each packet transmitted betw
 `sudo python3 sniffer.py interface`
 Press `Ctrl + C` to stop the application.
 
+# Format of Output
+## *Format of packets captured:*
+Source IP:
+Destination IP:
+IP Protocol used:
+` If protocol is TCP or UDP`
+&nbsp;&nbsp; Source Port Number:
+&nbsp;&nbsp; Destination Port Number
+
+## *Format of counts of each packet transmitted between the two unique sources:*
+`Source IP <---> Destination IP : Number of packets exchanged`
 # References
 - [Raw sockets Tutorial](https://www.opensourceforu.com/2015/03/a-guide-to-using-raw-sockets/)
 - [Python3 Sockets Reference](https://docs.python.org/3/library/socket.html)
