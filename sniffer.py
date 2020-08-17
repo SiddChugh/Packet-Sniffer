@@ -48,7 +48,6 @@ TCP_DATAGRAM     = 0x06
 # Constant that indicates presence of UDP Protocol in the datagram
 UDP_DATAGRAM     = 0x11
 
-
 # Helper function to print the counts of each packet transmitted between 
 # the two unique sources
 def printSessionInformation():
@@ -204,6 +203,7 @@ def main():
           print ("Destination port " + str (dest_port))
           print ("Captured at " + time.ctime())
         
+        # Unique pair of sources
         if (not(dict_key in track_packets_bw_sources)):
           track_packets_bw_sources[dict_key] = {"protocol" : 
                                                 transport_layer_protocol, 
