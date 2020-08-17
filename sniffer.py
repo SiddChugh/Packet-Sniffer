@@ -48,66 +48,73 @@ TCP_DATAGRAM     = 0x06
 # Constant that indicates presence of UDP Protocol in the datagram
 UDP_DATAGRAM     = 0x11
 
+
 # Helper function to print the counts of each packet transmitted between two 
 # unique sources
 def printSessionInformation():
-  if (len(track_packets_bw_sources) > 0):
-    print("Summary of the number of packets exchanged between two unique " + \
-        "sources at " + time.ctime() + "\n")
-    print("Format: Source IP <---> Destination IP : Number of packets " \
-          "exchanged")
+  if (len (track_packets_bw_sources) > 0):
+    print ("Summary of the number of packets exchanged between two unique " \
+          + "sources at " + time.ctime() + "\n")
+    print ("Format: Source IP <---> Destination IP : Number of packets " \
+          + "exchanged")
 
     # List the number of packets exchanged between pairs of unique source and
     # destination IP addresses.
     for key in track_packets_bw_sources:
-      print(key, ":", track_packets_bw_sources[key])
-    print("\n")
-    print("Total Number of packets captured in the session as of" + \
+      print (key, ":", track_packets_bw_sources[key])
+
+    print ("\n")
+    print ("Total Number of packets captured in the session as of " + \
           time.ctime() + " are " + str(NUM_PACKETS) + "\n")
   else:
-    print("No packets were captured in the session as of " + time.ctime() \
+    print ("No packets were captured in the session as of " + time.ctime() \
           + "\n")
 
+# Print number of packets exchanged between two unique source
+# after every 10 seconds
 def printSessionInformationPeriodically():  
-  printSessionInformation()
-
-  # Run the above piece of code after every 10 seconds
-  periodic_task = threading.Timer(10, printSessionInformationPeriodically)
-  # Make sure that thread ends when the main thread is closed
-  periodic_task.daemon = True
-  periodic_task.start()
+  while True:
+    printSessionInformation()
+    # Pause the thread for 10 seconds
+    time.sleep (10)
 
 # Start Sniffing Packets
 def main():
   global track_packets_bw_sources
   global NUM_PACKETS
 
-  print("-------------Start Sniffing packets.--------------------------------")
-  print("After every 10 seconds, counts of each packet transmitted between " \
+  print ("-------------Start Sniffing packets.-------------------------------")
+  print ("After every 10 seconds, counts of each packet transmitted between " \
         "two unique sources are printed\n")
-  print("Press Ctrl + C to stop the process and display the " + \
+  print ("Press Ctrl + C to stop the process and display the " + \
   "statistics between two unique sources.\n") 
 
   # socket.AF_PACKET, socket.SOCK_RAW indicates the socket family and type
   # required to implement a raw socket.
   # socket.ntohs(0x0003) allows this program to capture all the packets
-  conn = socket.socket(socket.PF_PACKET, socket.SOCK_RAW, socket.ntohs(0x0003))
-
+  conn = socket.socket (socket.PF_PACKET, socket.SOCK_RAW, \
+                        socket.ntohs (0x0003))
+  
   # Print number of packets exchanged between two unique source
   # after every 10 seconds
-  printSessionInformationPeriodically()
+  periodic_task = threading.Thread (target = \
+                                    printSessionInformationPeriodically)
+  # Make sure that thread ends when the main thread is closed
+  periodic_task.daemon = True
+  # Start and stop the thread
+  periodic_task.start()
 
   try:
     while True:
       # Bind the socket to the interface requested by the user
       try:
-        conn.bind((sys.argv[1], 0))
+        conn.bind ((sys.argv[1], 0))
       except OSError:
-        print("Interface not available")
-        sys.exit(1)
+        print ("Interface not available")
+        sys.exit (1)
 
       # 65536 bytes: The maximum theoretical datagram size
-      ethernet_frame, address = conn.recvfrom(65535)
+      ethernet_frame, address = conn.recvfrom (65535)
             
       # eternet_frame_data is a sequence of bytes which is equivalent to 
       # struct ethhdr listed in if_ether.h header
@@ -120,14 +127,14 @@ def main():
       # bytes encapsulated between the indices 12 and 14. 
       ether_type_start_index = ETHER_MAC_ADDRESS_VARIABLE_SIZE + \
                                ETHER_MAC_ADDRESS_VARIABLE_SIZE
-      ether_type_size        = struct.calcsize('H')
+      ether_type_size        = struct.calcsize ('H')
       ether_type_end_index   = ether_type_start_index + ether_type_size
-      etherType              = struct.unpack('H', \
+      etherType              = struct.unpack ('H', \
                                ethernet_frame[ether_type_start_index : \
                                ether_type_end_index])[0]
 
       # Proceed only if the captured frame contains IPv4 packets
-      if (socket.htons(etherType) == ETHER_FRAME_IPV4):
+      if (socket.htons (etherType) == ETHER_FRAME_IPV4):
         packet = ethernet_frame[ether_type_end_index :]
 
         # data after the index 14 in the frame contains information about the 
@@ -145,8 +152,8 @@ def main():
                                                IPv4_TTL_VARIABLE_SIZE + 1
         transport_layer_protocol_end_index  = \
         transport_layer_protocol_start_index + \
-        struct.calcsize('! B')
-        transport_layer_protocol = struct.unpack('! B', \
+        struct.calcsize ('! B')
+        transport_layer_protocol = struct.unpack ('! B', \
                                     packet[ \
                                     transport_layer_protocol_start_index: \
                                     transport_layer_protocol_end_index])[0]
@@ -154,13 +161,13 @@ def main():
         IP_address_start_index = transport_layer_protocol_end_index + \
                                  IPv4_CHECK_VARIABLE_SIZE
         IP_address_end_index   = IP_address_start_index + \
-                               struct.calcsize('! 4s 4s')
+                               struct.calcsize ('! 4s 4s')
 
-        IP_source_address, IP_dest_address = struct.unpack('! 4s 4s', \
+        IP_source_address, IP_dest_address = struct.unpack ('! 4s 4s', \
                                              packet[IP_address_start_index: \
-                                                    IP_address_end_index])
-        IP_source_address = '.'.join(map(str,IP_source_address))
-        IP_dest_address   = '.'.join(map(str,IP_dest_address))
+                                                    IP_address_end_index] )
+        IP_source_address = '.'.join (map (str,IP_source_address))
+        IP_dest_address   = '.'.join (map (str,IP_dest_address))
         
         dict_key = IP_source_address+ " <--> " + IP_dest_address
 
@@ -168,14 +175,14 @@ def main():
           track_packets_bw_sources[dict_key] = 1
         # Increment the number of packets exchanged between the sources
         else :
-          number_of_packets_exchanged = track_packets_bw_sources.get(dict_key)
-          track_packets_bw_sources.update({dict_key : \
-                                          number_of_packets_exchanged + 1})  
+          number_of_packets_exchanged = track_packets_bw_sources.get (dict_key)
+          track_packets_bw_sources.update ( {dict_key : \
+                                          number_of_packets_exchanged + 1} )  
 
-        print("---------------Packet Information Start-----------------------")
-        print("IP Source Address: " + IP_source_address)
-        print("IP Destination Address: " + IP_dest_address)
-        print("IP Protocol used: " + str(transport_layer_protocol))
+        print ("---------------Packet Information Start-----------------------")
+        print ("IP Source Address: " + IP_source_address)
+        print ("IP Destination Address: " + IP_dest_address)
+        print ("IP Protocol used: " + str(transport_layer_protocol))
         
         segment = packet[IP_address_end_index:]
 
@@ -183,32 +190,34 @@ def main():
             transport_layer_protocol == UDP_DATAGRAM):
           protocol = "TCP" if transport_layer_protocol == TCP_DATAGRAM \
                       else "UDP"
-          print("The protocol used in this transmission is " + protocol)
+          print ("The protocol used in this transmission is " + protocol)
 
           # The TCP / UDP header information is encapsulated in struct tcphdr 
           # and udphdr respectively. The struct information can be foundin the 
           # files tcp.h and udp.h.    
           # The first two member variables of this struct are source and 
           # destination port numbers.
-          src_port, dest_port = struct.unpack('! H H', \
-                                segment[:struct.calcsize('! H H')])
-          print("Source port " + str(src_port))
-          print("Destination port " + str(dest_port))
+          src_port, dest_port = struct.unpack ('! H H', \
+                                segment[:struct.calcsize ('! H H')] )
+          print ("Source port " + str(src_port))
+          print ("Destination port " + str(dest_port))
+          print ("Captured at " + time.ctime())
         
         # Increment number of packets exchanged in the session.     
         NUM_PACKETS += 1
 
-        print("---------------Packet Information End-----------------------\n")
+        print ("---------------Packet Information End-----------------------\n")
 
-  # Close the session and display the end of session stastics
+  # Display stastics when the user presses Ctrl + C
   except KeyboardInterrupt:
-    print("--------------End of Session Statistics-------------------------\n")
-    print("Total Number of packets captured in the session " + \
+    print ("--------------End of Session Statistics-------------------------\n")
+    
+    print ("Total Number of packets captured in the session " + \
     str(NUM_PACKETS) + "\n")
-    print("Summary of all the packets exchanged between two unique sources "\
-          + "in the session\n")
+
     printSessionInformation()
-    print("Exiting....")
+    
+    print ("Exiting....")
 
 if __name__=="__main__":
   main()
