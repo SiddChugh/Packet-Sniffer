@@ -4,7 +4,7 @@ import struct
 import threading
 import time
 
-# Dictionary to track number of packets exchanged between the two sources
+# Dictionary to track number of packets exchanged between two unique sources
 track_packets_bw_sources = dict()
 
 # Total Number of packets captured in the session
@@ -74,7 +74,7 @@ def printSessionInformation():
 # after every 10 seconds
 def printSessionInformationPeriodically(): 
   period = 10 
-  
+
   while True:
     printSessionInformation()
 
@@ -172,17 +172,9 @@ def main():
         IP_source_address = '.'.join (map (str,IP_source_address))
         IP_dest_address   = '.'.join (map (str,IP_dest_address))
         
-        dict_key = IP_source_address+ " <--> " + IP_dest_address
-
-        if (not(dict_key in track_packets_bw_sources)):
-          track_packets_bw_sources[dict_key] = 1
-        # Increment the number of packets exchanged between the sources
-        else :
-          number_of_packets_exchanged = track_packets_bw_sources.get (dict_key)
-          track_packets_bw_sources.update ( {dict_key : \
-                                          number_of_packets_exchanged + 1} )  
-
-        print ("---------------Packet Information Start-----------------------")
+        dict_key = IP_source_address + " <--> " + IP_dest_address
+          
+        print ("--------------Packet Information Start-----------------------")
         print ("IP Source Address: " + IP_source_address)
         print ("IP Destination Address: " + IP_dest_address)
         print ("IP Protocol used: " + str (transport_layer_protocol))
@@ -202,18 +194,35 @@ def main():
           # destination port numbers.
           src_port, dest_port = struct.unpack ('! H H', \
                                 segment[:struct.calcsize ('! H H')] )
+
+          # Dictionary key is updated to include port numbers if the protocol
+          # is either TCP or UDP
+          dict_key = IP_source_address + ":" +  str(src_port) + " <--> " + \
+                     IP_dest_address + ":" + str(dest_port)
+
           print ("Source port " + str (src_port))
           print ("Destination port " + str (dest_port))
           print ("Captured at " + time.ctime())
         
+        if (not(dict_key in track_packets_bw_sources)):
+          track_packets_bw_sources[dict_key] = {"protocol" : 
+                                                transport_layer_protocol, 
+                                                "num_packets" : 1}
+        # Increment the number of packets exchanged between the sources
+        else :
+          number_of_packets_exchanged = track_packets_bw_sources[dict_key] \
+                                                                ["num_packets"]
+          track_packets_bw_sources[dict_key]["num_packets"] = \
+          number_of_packets_exchanged + 1
+
         # Increment number of packets exchanged in the session.     
         NUM_PACKETS += 1
 
-        print ("---------------Packet Information End-----------------------\n")
+        print ("---------------Packet Information End----------------------\n")
 
   # Display stastics when the user presses Ctrl + C
   except KeyboardInterrupt:
-    print ("--------------End of Session Statistics-------------------------\n")
+    print ("--------------End of Session Statistics------------------------\n")
     
     print ("Total Number of packets captured in the session " + \
     str (NUM_PACKETS) + "\n")
