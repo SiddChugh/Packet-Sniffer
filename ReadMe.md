@@ -9,12 +9,12 @@ Press `Ctrl + C` to stop the application.
 
 # Format of Output
 ## *Format of packets captured:*
-Source IP:
-Destination IP:
-IP Protocol used:
-` If protocol is TCP or UDP`
-&nbsp;&nbsp; Source Port Number:
-&nbsp;&nbsp; Destination Port Number
+Source IP: <br>
+Destination IP: <br>
+IP Protocol used: <br>
+` If protocol is TCP or UDP` <br>
+&nbsp;&nbsp; Source Port Number: <br>
+&nbsp;&nbsp; Destination Port Number <br>
 
 ## *Format of counts of each packet transmitted between the two unique sources:*
 `Source IP <---> Destination IP : Number of packets exchanged`
