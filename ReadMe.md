@@ -17,7 +17,7 @@ IP Protocol used: <br>
 &nbsp;&nbsp; Destination Port Number <br>
 
 ## *Format of counts of each packet transmitted between the two unique sources:*
-`Source IP <---> Destination IP : Number of packets exchanged`
+`Source IP <---> Destination IP : Protocol, Number of packets exchanged`
 # References
 - [Raw sockets Tutorial](https://www.opensourceforu.com/2015/03/a-guide-to-using-raw-sockets/)
 - [Python3 Sockets Reference](https://docs.python.org/3/library/socket.html)
