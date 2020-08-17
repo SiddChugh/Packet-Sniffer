@@ -51,17 +51,31 @@ UDP_DATAGRAM     = 0x11
 # Helper function to print the counts of each packet transmitted between two 
 # unique sources
 def printSessionInformation():
-  print("Summary of the number of packets exchanged between two unique " + \
+  if (len(track_packets_bw_sources) > 0):
+    print("Summary of the number of packets exchanged between two unique " + \
         "sources at " + time.ctime() + "\n")
-  
-  # List the number of packets exchanged between pairs of unique source and
-  # destination IP addresses.
-  for key in track_packets_bw_sources:
-    print(key, ":", track_packets_bw_sources[key])
-  print("\n")
+    print("Format: Source IP <---> Destination IP : Number of packets " \
+          "exchanged")
 
-  # Pause the thread for 10 seconds
-  time.sleep(10)
+    # List the number of packets exchanged between pairs of unique source and
+    # destination IP addresses.
+    for key in track_packets_bw_sources:
+      print(key, ":", track_packets_bw_sources[key])
+    print("\n")
+    print("Total Number of packets captured in the session as of" + \
+          time.ctime() + " are " + str(NUM_PACKETS) + "\n")
+  else:
+    print("No packets were captured in the session as of " + time.ctime() \
+          + "\n")
+
+def printSessionInformationPeriodically():  
+  printSessionInformation()
+
+  # Run the above piece of code after every 10 seconds
+  periodic_task = threading.Timer(10, printSessionInformationPeriodically)
+  # Make sure that thread ends when the main thread is closed
+  periodic_task.daemon = True
+  periodic_task.start()
 
 # Start Sniffing Packets
 def main():
@@ -70,15 +84,19 @@ def main():
 
   print("-------------Start Sniffing packets.--------------------------------")
   print("After every 10 seconds, counts of each packet transmitted between " \
-        "two unique sources are printed")
+        "two unique sources are printed\n")
   print("Press Ctrl + C to stop the process and display the " + \
-  "statistics between two unique sources.") 
+  "statistics between two unique sources.\n") 
 
   # socket.AF_PACKET, socket.SOCK_RAW indicates the socket family and type
   # required to implement a raw socket.
   # socket.ntohs(0x0003) allows this program to capture all the packets
   conn = socket.socket(socket.PF_PACKET, socket.SOCK_RAW, socket.ntohs(0x0003))
-  
+
+  # Print number of packets exchanged between two unique source
+  # after every 10 seconds
+  printSessionInformationPeriodically()
+
   try:
     while True:
       # Bind the socket to the interface requested by the user
@@ -90,16 +108,7 @@ def main():
 
       # 65536 bytes: The maximum theoretical datagram size
       ethernet_frame, address = conn.recvfrom(65535)
-      
-      # Print number of packets exchanged between two unique source
-      # after every 10 seconds
-      periodic_task = threading.Thread(target = printSessionInformation)
-      # Make sure that thread ends when the main thread is closed
-      periodic_task.daemon = True
-      # Start and stop the thread
-      periodic_task.start()
-      periodic_task.join()
-      
+            
       # eternet_frame_data is a sequence of bytes which is equivalent to 
       # struct ethhdr listed in if_ether.h header
       # The first two variables contained in the struct are source and 
@@ -191,12 +200,15 @@ def main():
 
         print("---------------Packet Information End-----------------------\n")
 
-  # Display stastics when the user presses Ctrl + C
+  # Close the session and display the end of session stastics
   except KeyboardInterrupt:
-    print("-------------------- Statistics---------------------------------\n")
+    print("--------------End of Session Statistics-------------------------\n")
     print("Total Number of packets captured in the session " + \
     str(NUM_PACKETS) + "\n")
-    print("-----------------------Session Ended------------------------------")
+    print("Summary of all the packets exchanged between two unique sources "\
+          + "in the session\n")
+    printSessionInformation()
+    print("Exiting....")
 
 if __name__=="__main__":
   main()
