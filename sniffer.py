@@ -2,6 +2,7 @@ import socket
 import sys
 import struct
 import threading
+import time
 
 # Dictionary to track number of packets exchanged between the two sources
 track_packets_bw_sources = dict()
@@ -47,16 +48,29 @@ TCP_DATAGRAM     = 0x06
 # Constant that indicates presence of UDP Protocol in the datagram
 UDP_DATAGRAM     = 0x11
 
-# Helper function to print numbre of packets captured
-def printNumberofPackets():
-  print("Total Number of packets captured till now " + str(NUM_PACKETS) + "\n")
+# Helper function to print the counts of each packet transmitted between two 
+# unique sources
+def printSessionInformation():
+  print("Summary of the number of packets exchanged between two unique " + \
+        "sources at " + time.ctime() + "\n")
+  
+  # List the number of packets exchanged between pairs of unique source and
+  # destination IP addresses.
+  for key in track_packets_bw_sources:
+    print(key, ":", track_packets_bw_sources[key])
+  print("\n")
+
+  # Pause the thread for 10 seconds
+  time.sleep(10)
 
 # Start Sniffing Packets
 def main():
+  global track_packets_bw_sources
   global NUM_PACKETS
 
   print("-------------Start Sniffing packets.--------------------------------")
-  print("After every 10 seconds, the number of packets captured are printed.")
+  print("After every 10 seconds, counts of each packet transmitted between " \
+        "two unique sources are printed")
   print("Press Ctrl + C to stop the process and display the " + \
   "statistics between two unique sources.") 
 
@@ -64,7 +78,7 @@ def main():
   # required to implement a raw socket.
   # socket.ntohs(0x0003) allows this program to capture all the packets
   conn = socket.socket(socket.PF_PACKET, socket.SOCK_RAW, socket.ntohs(0x0003))
-    
+  
   try:
     while True:
       # Bind the socket to the interface requested by the user
@@ -77,11 +91,14 @@ def main():
       # 65536 bytes: The maximum theoretical datagram size
       ethernet_frame, address = conn.recvfrom(65535)
       
-      # Print total number of packets captured after every 10 seconds
-      periodic_task = threading.Timer(10.0, printNumberofPackets)
+      # Print number of packets exchanged between two unique source
+      # after every 10 seconds
+      periodic_task = threading.Thread(target = printSessionInformation)
       # Make sure that thread ends when the main thread is closed
       periodic_task.daemon = True
+      # Start and stop the thread
       periodic_task.start()
+      periodic_task.join()
       
       # eternet_frame_data is a sequence of bytes which is equivalent to 
       # struct ethhdr listed in if_ether.h header
@@ -179,14 +196,6 @@ def main():
     print("-------------------- Statistics---------------------------------\n")
     print("Total Number of packets captured in the session " + \
     str(NUM_PACKETS) + "\n")
-
-    print("Summary of the number of packets exchanged between two unique " + \
-          "sources\n")
-    # List the number of packets exchanged between pairs of unique source and
-    # destination IP addresses.
-    for key in track_packets_bw_sources:
-      print(key, ":", track_packets_bw_sources[key])
-
     print("-----------------------Session Ended------------------------------")
 
 if __name__=="__main__":
