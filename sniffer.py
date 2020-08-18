@@ -4,12 +4,14 @@ import struct
 import threading
 import time
 import datetime
+import asyncio
 
 # Dictionary to track number of packets exchanged between two unique sources
 track_packets_bw_sources = dict()
 
 # Total Number of packets captured in the session
 NUM_PACKETS = 0
+
 
 #------------------------------------------------------------------------------
 # ----------------------C Struct Specific Constants---------------------------
@@ -51,7 +53,9 @@ UDP_DATAGRAM     = 0x11
 
 # Helper function to print the counts of each packet transmitted between 
 # the two unique sources
-def printSessionInformation():
+async def printSessionInformation():
+  period = 10 
+
   if (len (track_packets_bw_sources) > 0):
     print ("Summary of the number of packets exchanged between two unique " \
           + "sources at " + time.ctime() + "\n")
@@ -71,6 +75,9 @@ def printSessionInformation():
     print ("No packets were captured in the session as of " + time.ctime() \
           + "\n")
 
+  #time.sleep (period)
+
+
 # Print number of packets exchanged between two unique source
 # after every 10 seconds
 def printSessionInformationPeriodically(): 
@@ -83,7 +90,7 @@ def printSessionInformationPeriodically():
     time.sleep (period)
 
 # Start Sniffing Packets
-def main():
+async def main():
   global track_packets_bw_sources
   global NUM_PACKETS
 
@@ -107,13 +114,11 @@ def main():
   # periodic_task.daemon = True
   # # Start and stop the thread
   # periodic_task.start()
-
   currentTime = datetime.datetime.utcnow()
-
   try:
     while True:
       if ((datetime.datetime.utcnow() - currentTime).total_seconds() > 10):
-        printSessionInformation()
+        await asyncio.gather(printSessionInformation())
         currentTime = datetime.datetime.utcnow()
         
       # Bind the socket to the interface requested by the user
@@ -122,6 +127,8 @@ def main():
       except OSError:
         print ("Interface not available")
         sys.exit (1)
+
+      
 
       # 65536 bytes: The maximum theoretical datagram size
       ethernet_frame, address = conn.recvfrom (65535)
@@ -242,4 +249,5 @@ def main():
     print ("Exiting....")
 
 if __name__=="__main__":
-  main()
+  loop = asyncio.get_event_loop()
+  loop.run_until_complete(main())
