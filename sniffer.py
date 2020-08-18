@@ -3,6 +3,7 @@ import sys
 import struct
 import threading
 import time
+import datetime
 
 # Dictionary to track number of packets exchanged between two unique sources
 track_packets_bw_sources = dict()
@@ -98,17 +99,23 @@ def main():
   conn = socket.socket (socket.PF_PACKET, socket.SOCK_RAW, \
                         socket.ntohs (0x0003))
   
-  # Spawn a background thread thart would print number of packets exchanged
-  # between two unique sources after every 10 seconds
-  periodic_task = threading.Thread (target = \
-                                    printSessionInformationPeriodically)
-  # Make sure that thread ends when the main thread is closed
-  periodic_task.daemon = True
-  # Start and stop the thread
-  periodic_task.start()
+  # # Spawn a background thread thart would print number of packets exchanged
+  # # between two unique sources after every 10 seconds
+  # periodic_task = threading.Thread (target = \
+  #                                   printSessionInformationPeriodically)
+  # # Make sure that thread ends when the main thread is closed
+  # periodic_task.daemon = True
+  # # Start and stop the thread
+  # periodic_task.start()
+
+  currentTime = datetime.datetime.utcnow()
 
   try:
     while True:
+      if ((datetime.datetime.utcnow() - currentTime).total_seconds() > 10):
+        printSessionInformation()
+        currentTime = datetime.datetime.utcnow()
+        
       # Bind the socket to the interface requested by the user
       try:
         conn.bind ((sys.argv[1], 0))
