@@ -60,7 +60,8 @@ def printSessionInformation():
     # List the number of packets exchanged between pairs of unique source and
     # destination IP addresses.
     for key in track_packets_bw_sources:
-      print (key, ":", track_packets_bw_sources[key])
+      cleansed_key = key[:key.rfind(".")]
+      print (cleansed_key, ":", track_packets_bw_sources[key])
 
     print ("\n")
     print ("Total Number of packets captured in the session as of " + \
@@ -171,7 +172,8 @@ def main():
         IP_source_address = '.'.join (map (str,IP_source_address))
         IP_dest_address   = '.'.join (map (str,IP_dest_address))
         
-        dict_key = IP_source_address + " <--> " + IP_dest_address
+        dict_key = IP_source_address + " <--> " + IP_dest_address + "." + \
+                   str(transport_layer_protocol)
           
         print ("--------------Packet Information Start-----------------------")
         print ("IP Source Address: " + IP_source_address)
@@ -197,7 +199,8 @@ def main():
           # Dictionary key is updated to include port numbers if the protocol
           # is either TCP or UDP
           dict_key = IP_source_address + ":" +  str(src_port) + " <--> " + \
-                     IP_dest_address + ":" + str(dest_port)
+                     IP_dest_address + ":" + str(dest_port) + "." + \
+                     str(transport_layer_protocol)
 
           print ("Source port " + str (src_port))
           print ("Destination port " + str (dest_port))
