@@ -1,8 +1,8 @@
 import socket
 import sys
 import struct
-import datetime
-import asyncio
+import threading
+import time
 
 # Dictionary to track number of packets exchanged between two unique sources
 track_packets_bw_sources = dict()
@@ -50,28 +50,39 @@ UDP_DATAGRAM     = 0x11
 
 # Helper function to print the counts of each packet transmitted between 
 # the two unique sources
-async def printSessionInformation():
+def printSessionInformation():
   if (len (track_packets_bw_sources) > 0):
     print ("Summary of the number of packets exchanged between two unique " \
-          + "sources at " + str(datetime.datetime.utcnow()) + "\n")
+          + "sources at " + time.ctime() + "\n")
     print ("Format: Source IP <---> Destination IP : Number of packets " \
           + "exchanged")
 
     # List the number of packets exchanged between pairs of unique source and
     # destination IP addresses.
     for key in track_packets_bw_sources:
-      # Protocol information is already diclosed as part of value
       cleansed_key = key[:key.rfind(".")]
       print (cleansed_key, ":", track_packets_bw_sources[key])
 
+    print ("\n")
     print ("Total Number of packets captured in the session as of " + \
-          str(datetime.datetime.utcnow()) + " are " + str (NUM_PACKETS) + "\n")
+          time.ctime() + " are " + str (NUM_PACKETS) + "\n")
   else:
-    print ("No packets were captured in the session as of " + \
-          str(datetime.datetime.utcnow()) + "\n")
+    print ("No packets were captured in the session as of " + time.ctime() \
+          + "\n")
+
+# Print number of packets exchanged between two unique source
+# after every 10 seconds
+def printSessionInformationPeriodically(): 
+  period = 10 
+
+  while True:
+    printSessionInformation()
+
+    # Pause the thread for 10 seconds
+    time.sleep (period)
 
 # Start Sniffing Packets
-async def main():
+def main():
   global track_packets_bw_sources
   global NUM_PACKETS
 
@@ -87,17 +98,17 @@ async def main():
   conn = socket.socket (socket.PF_PACKET, socket.SOCK_RAW, \
                         socket.ntohs (0x0003))
   
-  currentTime = datetime.datetime.utcnow()
-  
+  # Spawn a background thread thart would print number of packets exchanged
+  # between two unique sources after every 10 seconds
+  periodic_task = threading.Thread (target = \
+                                    printSessionInformationPeriodically)
+  # Make sure that thread ends when the main thread is closed
+  periodic_task.daemon = True
+  # Start and stop the thread
+  periodic_task.start()
+
   try:
     while True:
-      # Print number of packets exchanged between two unique source
-      # after every 10 seconds
-      if ((datetime.datetime.utcnow() - currentTime).total_seconds() > 10):
-        # Run this task asynchronouslly to not disrupt packets collection
-        await asyncio.gather(printSessionInformation())
-        currentTime = datetime.datetime.utcnow()
-
       # Bind the socket to the interface requested by the user
       try:
         conn.bind ((sys.argv[1], 0))
@@ -163,14 +174,20 @@ async def main():
         
         dict_key = IP_source_address + " <--> " + IP_dest_address + "." + \
                    str(transport_layer_protocol)
-             
+          
+        print ("--------------Packet Information Start-----------------------")
+        print ("IP Source Address: " + IP_source_address)
+        print ("IP Destination Address: " + IP_dest_address)
+        print ("IP Protocol used: " + str (transport_layer_protocol))
+        
         segment = packet[IP_address_end_index:]
 
         if (transport_layer_protocol == TCP_DATAGRAM or \
             transport_layer_protocol == UDP_DATAGRAM):
           protocol = "TCP" if transport_layer_protocol == TCP_DATAGRAM \
                       else "UDP"
-      
+          print ("The protocol used in this transmission is " + protocol)
+
           # The TCP / UDP header information is encapsulated in struct tcphdr 
           # and udphdr respectively. The struct information can be foundin the 
           # files tcp.h and udp.h.    
@@ -185,6 +202,10 @@ async def main():
                      IP_dest_address + ":" + str(dest_port) + "." + \
                      str(transport_layer_protocol)
 
+          print ("Source port " + str (src_port))
+          print ("Destination port " + str (dest_port))
+          print ("Captured at " + time.ctime())
+        
         # Unique pair of sources
         if (not(dict_key in track_packets_bw_sources)):
           track_packets_bw_sources[dict_key] = {"protocol" : 
@@ -200,17 +221,18 @@ async def main():
         # Increment number of packets exchanged in the session.     
         NUM_PACKETS += 1
 
+        print ("---------------Packet Information End----------------------\n")
+
   # Display stastics when the user presses Ctrl + C
   except KeyboardInterrupt:
+    print ("--------------End of Session Statistics------------------------\n")
+    
+    print ("Total Number of packets captured in the session " + \
+    str (NUM_PACKETS) + "\n")
+
+    printSessionInformation()
+    
     print ("Exiting....")
 
 if __name__=="__main__":
-  python_version = str(sys.version_info[0]) + "." + str(sys.version_info[1])
-  
-  # For python versions less than 3.7
-  if (float(python_version) <= 3.7):
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
-    loop.close()
-  else:
-    asyncio.run(main())
+  main()
